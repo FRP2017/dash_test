@@ -39,6 +39,7 @@ for etf in df_1['name'].unique():
 
 
 app = dash.Dash()
+server = app.server
 
 app.layout = htlm.Div( [
                 htlm.Div([  
@@ -80,4 +81,4 @@ def grafico(valor_selector1,valor_selector2):
 
 
 if __name__=='__main__':
-    app.run_server(port = 7000)
+    app.run_server()
