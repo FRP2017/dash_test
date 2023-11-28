@@ -6,7 +6,7 @@ import investpy
 import pandas as pd
 
 
-from datetime import datetime
+from datetime import datetime, date
 import pandas as pd
 import numpy as np
 from dash import Input, Output
@@ -17,9 +17,9 @@ import plotly.graph_objects as go
 
 import yfinance as yf
 
-since = '20190101'
+# since = '20190101'
 
-since_ = pd.to_datetime(since,format = '%Y%m%d')
+# since_ = pd.to_datetime(since,format = '%Y%m%d')
 
 
 
@@ -39,13 +39,23 @@ for etf in df_1['name'].unique():
 
 
 app = dash.Dash()
-server = app.server
+server = app.server 
 
 app.layout = htlm.Div( [
+        dcc.DatePickerRange(
+                id='my-date-picker-range',
+                min_date_allowed=date(1995, 8, 5),
+                # max_date_allowed=date(2017, 9, 19),
+                #initial_visible_month=date(2017, 8, 5),
+                start_date =date(2020, 1, 1)  ,
+                end_date=date(2024, 1, 1) , style ={'width':'99%',
+                'display':'inline-block'}
+            ),
+
                 htlm.Div([  
                 dcc.Dropdown(id = "selector1", 
                 options =listado_etf,
-                value = 'SPY')] , style ={'width':'48%',
+                value = ['SPY','EWZ'], multi=True)] , style ={'width':'48%',
                 'display':'inline-block'} ),
 
                 htlm.Div([  
@@ -54,26 +64,66 @@ app.layout = htlm.Div( [
                 value = 'Close')] , style ={'width':'48%',
                 'display':'inline-block'}),
 
-                dcc.Graph(id ='grafico')], style={'padding': 14}
+                dcc.Graph(id ='grafico'),
+
+                # htlm.Div(id = "Mi-salida")
+                
+                ], style={'padding': 14}
         )
+
+# @app.callback( Output("Mi-salida", "children"),
+#               [Input('my-date-picker-range', 'start_date'),
+#                Input('my-date-picker-range', 'end_date')])
+# def devuelve_mi_salida(start, end):
+#     return 'has insertado : "{}" "{}"'.format(type(start) , end)
 
 @app.callback(Output('grafico','figure'),
               [ Input('selector1','value'),
-               Input('selector2', 'value')])
-def grafico(valor_selector1,valor_selector2):
+               Input('selector2', 'value'),
+               Input('my-date-picker-range','start_date'),
+               Input('my-date-picker-range','end_date')])
+def grafico(valor_selector1,valor_selector2, since, end):
 
-    datos= yf.download(valor_selector1, start=since_, interval='1d')
+    since_ = pd.to_datetime(since, format = "%Y-%m-%d")
+    end_ = pd.to_datetime(end, format = "%Y-%m-%d")
+    datos= yf.download(valor_selector1, start=since_, end = end_, interval='1d')
 
-    datos = datos[[valor_selector2]] 
 
-    datos.reset_index(inplace = True)
+    if len(valor_selector1)>1:
+
+        datos = datos[valor_selector2] 
+
+    elif len(valor_selector1) ==1:
+        
+        datos = pd.DataFrame(datos[valor_selector2]) 
+
+        datos = datos.rename(columns = {valor_selector2:valor_selector1[0]})
+
+    # print(datos.tail(10))
+    datos = datos.fillna(method = 'ffill')
+    
+    datos = datos.pct_change() + 1
+
+    datos = datos.cumprod()
+
+    datos.dropna(inplace = True)
+
+
+    layers =[]
+
+    for etf in valor_selector1:
+
+        temp = go.Scatter(x = datos.index,
+                           y = datos[etf],
+                           mode = 'lines',
+                           name=etf)
+
+        layers.append(temp)
 
     return {
-        'data':[go.Scatter(x = datos['Date'],
-                           y = datos[valor_selector2],
-                           mode = 'lines')],
+        'data':layers,
 
-        'layout': go.Layout(title = valor_selector1,
+        'layout': go.Layout(title = 'ETF',
                             xaxis = {'title':'Fecha'})
 
 
