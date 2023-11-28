@@ -10,7 +10,7 @@ dash==2.14.2
 dash-core-components==2.0.0
 dash-html-components==2.0.0
 dash-table==5.0.0
-flask==3.0.0
+flask==2.2.5
 frozendict==2.3.9
 gunicorn==21.2.0
 html5lib==1.1
