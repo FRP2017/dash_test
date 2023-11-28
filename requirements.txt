@@ -15,7 +15,7 @@ frozendict==2.3.9
 gunicorn==21.2.0
 html5lib==1.1
 idna==3.6
-importlib-metadata==6.8.0
+importlib-metadata==6.7.0
 investpy==1.0.8
 itsdangerous==2.1.2
 Jinja2==3.1.2
